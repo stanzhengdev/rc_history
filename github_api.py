@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Scrape github for repositories that have been created by 
+# Scrape github for repositories that have been created by
 # users during a given time period.
 
 import datetime
@@ -14,30 +14,31 @@ from github import Github, GithubException
 from hackers import lst
 
 
-# 1. How to handle rate limiting at different access points; avoid disgusting anti-pattern.
+# 1. How to handle rate limiting at different access points; avoid
+# disgusting anti-pattern.
 
 # 2. How to hide secrets: my passwords, hs usernames, data
 # 3. How to handle lightweight persistency - don't want to set-up a database, but scraping takes a long time.
 # 4. Other ways to quantify repo quality.
 
 
-### Bugs
+# Bugs
 
 # 1. Possibly skipping people when it crashes, is stopped.
 # 2. Dealing with people who have attended multiple batches
 # 3. Incorrect github names.
 
 
-
 # The Github API stuff.
-# This is 
+# This is
 
-githubAPI = Github('user', 'password')
+githubAPI = Github('0111001101111010', 'Uek4MGoJnbn7MK')
+
 
 def started_at_rc(dt, batch_dates):
     """
     Was this database started at Recurse Center?
-    Check if the given date object fits between a pair of start/end dates. 
+    Check if the given date object fits between a pair of start/end dates.
     """
     for start, end in batch_dates:
         if dt < end and dt > start:
@@ -64,9 +65,8 @@ def collect_repos(lst):
             save_github(l)
 
         save_user(username)
-        
-    return l
 
+    return l
 
 
 def check_rate_limit():
@@ -83,7 +83,7 @@ def repos_for_user(username):
     """
     Retrieve all repos for a user given...
     """
-    # Oh my. So much rate limiting code here. 
+    # Oh my. So much rate limiting code here.
     # Split this into separate items.
 
     l = []
@@ -95,78 +95,83 @@ def repos_for_user(username):
         if check_rate_limit():
             repos = [e for e in githubAPI.get_user(username).get_repos()]
 
-        elif e.status in (404, ): # repositories not found
+        elif e.status in (404, ):  # repositories not found
             print(username)
             return []
         else:
-            # Some other error. 
-            import pdb; pdb.set_trace()
+            # Some other error.
+            import pdb
+            pdb.set_trace()
             x = 5
 
-    except:
-        print(username)
-        return []
+    # except:
+    #     print(username)
+    #     return []
 
     for repo in repos:
+        l.append(repo)
 
-        description = repo.description
-        stars = repo.stargazers_count
-        watchers = repo.watchers_count
-        forks = repo.forks_count
-
-        try:
-            commits = repo.get_commits().reversed
-        except GithubException as e:
-            if check_rate_limit():
-                commits = repo.get_commits().reversed
-                
-            elif e.status in (409, 451, 403): 
-                # repository is empty (409), access is blocked (451), unavailable (problem on disk) (403)
-                continue
-            else:
-                import pdb; pdb.set_trace()
-                x = 5
-
-        except:
-            continue
-
-        try: 
-            c1 = commits[0]
-
-        except GithubException as e:
-            if check_rate_limit():
-                c1 = commits[0]
-
-            else:
-                raise e
-            
-        try:
-            date_string = c1.raw_data['commit']['committer']['date']
-        except GithubException as e:
-            if check_rate_limit():
-                date_string = c1.raw_data['commit']['committer']['date']
-        
-        ds2 = date_string.split('T')[0]
-        year, month, day = [int(e) for e in ds2.split('-')]
-        dt = datetime.datetime(year, month, day)
-
-        d = {
-            'name': repo.name,
-            'full_name': repo.full_name,
-            'description': repo.description or '',
-            'watchers': watchers,
-            'stars': stars,
-            'forks': forks,
-            'start_date': dt,
-            }
-
-        l.append(d)
-
+    import ipdb
+    ipdb.set_trace()
     return l
+    #     description = repo.description
+    #     stars = repo.stargazers_count
+    #     watchers = repo.watchers_count
+    #     forks = repo.forks_count
 
+    #     try:
+    #         commits = repo.get_commits().reversed
+    #     except GithubException as e:
+    #         if check_rate_limit():
+    #             commits = repo.get_commits().reversed
 
-## Utility functions for pickling / unpickling various things.
-## These exist because I don't want to have to set up a database.
+    #         elif e.status in (409, 451, 403):
+    #             # repository is empty (409), access is blocked (451), unavailable (problem on disk) (403)
+    #             continue
+    #         else:
+    #             import pdb; pdb.set_trace()
+    #             x = 5
+
+    #     except:
+    #         continue
+
+    #     try:
+    #         c1 = commits[0]
+
+    #     except GithubException as e:
+    #         if check_rate_limit():
+    #             c1 = commits[0]
+
+    #         else:
+    #             raise e
+
+    #     try:
+    #         date_string = c1.raw_data['commit']['committer']['date']
+    #     except GithubException as e:
+    #         if check_rate_limit():
+    #             date_string = c1.raw_data['commit']['committer']['date']
+
+    #     ds2 = date_string.split('T')[0]
+    #     year, month, day = [int(e) for e in ds2.split('-')]
+    #     dt = datetime.datetime(year, month, day)
+
+    #     d = {
+    #         'name': repo.name,
+    #         'full_name': repo.full_name,
+    #         'description': repo.description or '',
+    #         'watchers': watchers,
+    #         'stars': stars,
+    #         'forks': forks,
+    #         'start_date': dt,
+    #         }
+
+    #     l.append(repo)
+
+    # return l
+
+    # Utility functions for pickling / unpickling various things.
+    # These exist because I don't want to have to set up a database.
+
 
 def save_github(lst):
     print('pickling')
@@ -194,7 +199,6 @@ def check_empty_user():
         f = open('users.pickle', 'wb')
         pickle.dump(s, f)
         f.close()
-        
 
 
 def save_user(username):
@@ -230,7 +234,5 @@ def main():
     repos = collect_repos(lst)
 
 
-
 if __name__ == "__main__":
     main()
-
